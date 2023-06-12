@@ -19,7 +19,17 @@ My application will use OpenStreetMap to predict travel time based on:
 I starded by downloading the OpenStreetMap data for italy from geofabrik though the following link: https://download.geofabrik.de/europe/italy-latest.osm.pbf
 
 ### STEP 2
-I then imported the data to a Postgres database i had already configured on my computer through __osm2pgsql__
+I then imported the data to a Postgres database i had already configured on my computer (called "OSMDB") through __osm2pgsql__.
+this was archieved through the command:
+
+    > osm2pgsql -d OSMDB -U postgres --password --hstore --latlong italy-latest.osm.pbf
+
+where each of the tags identifies a specific parameter for the __osm2pgsql__ function: TODO
+
+- "-d" : 
+- ecc.
+
+
 
 ## Sources:
 - https://wiki.openstreetmap.org/wiki/IT:Pagina%20Principale?uselang=it
