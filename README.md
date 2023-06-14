@@ -29,7 +29,11 @@ where each of the tags identifies a specific parameter for the __osm2pgsql__ fun
 - "-d" : 
 - ecc.
 
+### STEP 3
+It was then necessary to install python module __psycopg2__
 
+### STEP 4
+At this point I was able to start to write the python code of the application
 
 ## Sources:
 - https://wiki.openstreetmap.org/wiki/IT:Pagina%20Principale?uselang=it

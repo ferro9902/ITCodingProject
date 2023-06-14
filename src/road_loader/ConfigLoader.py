@@ -5,7 +5,7 @@ class ConfigLoader:
 
     def __init__(self):
         config_file = "src\\resources\\config.json"
-        self.config = self.load_config(config_file)
+        self.config = ConfigLoader.load_config(config_file)
 
     def load_config(file_path):
         with open(file_path, "r") as file:

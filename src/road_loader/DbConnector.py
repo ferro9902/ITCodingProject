@@ -16,11 +16,11 @@ class DbConnector:
         # connection initialization
         try:
             self.conn = psycopg2.connect(
-                host=self.host,
+                host=self.ip,
                 port=self.port,
-                database=self.database,
+                database=self.db,
                 user=self.user,
-                password=self.password
+                password=self.psw
             )
             print("DB connection successful")
         except (Exception, psycopg2.Error) as error:
@@ -31,11 +31,13 @@ class DbConnector:
             self.conn.close()
             print("Disconnected from DB")
 
-    def query_db(self, query):
+    def query_db(self, query) -> list:
         try:
             cursor = self.conn.cursor()
             cursor.execute(query)
             records = cursor.fetchall()
+            print(
+                f"found [{records.__sizeof__()}] records from query: {query}")
             return records
         except (Exception, psycopg2.Error) as error:
             print("Query Error:", error)
