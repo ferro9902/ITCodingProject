@@ -31,13 +31,13 @@ class DbConnector:
             self.conn.close()
             print("Disconnected from DB")
 
-    def query_db(self, query) -> list:
+    def query_db(self, query: str) -> list:
         try:
             cursor = self.conn.cursor()
             cursor.execute(query)
             records = cursor.fetchall()
             print(
-                f"found [{records.__sizeof__()}] records from query: {query}")
+                f"found [{len(records)}] records from query: {query}")
             return records
         except (Exception, psycopg2.Error) as error:
             print("Query Error:", error)
