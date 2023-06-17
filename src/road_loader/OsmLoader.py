@@ -1,6 +1,6 @@
 import DbConnector
-import db_records.OsmRoadRecord
-import db_records.OsmLineRecord
+import DTOs.OsmLineDTO
+import DTOs.OsmRoadDTO
 
 
 class OsmLoader:
@@ -12,7 +12,7 @@ class OsmLoader:
         res = self.dbc.query_db(query)
         road_list = []
         for record in res:
-            road = db_records.OsmRoadRecord.OsmRoadRecord()
+            road = DTOs.OsmRoadDTO.OsmRoadDTO()
             road.record_to_osmroad(record)
             road_list.append(road)
         print("converted query result to road list of size: ",
@@ -24,7 +24,7 @@ class OsmLoader:
         res = self.dbc.query_db(query)
         road_list = []
         for record in res:
-            road = db_records.OsmRoadRecord.OsmRoadRecord()
+            road = DTOs.OsmRoadDTO.OsmRoadDTO()
             road.record_to_osmroad(record)
             road_list.append(road)
         print("converted query result to road list of size: ",
@@ -36,7 +36,7 @@ class OsmLoader:
         res = self.dbc.query_db(query)
         line_list = []
         for record in res:
-            line = db_records.OsmLineRecord.OsmLineRecord()
+            line = DTOs.OsmLineDTO.OsmLineDTO()
             line.record_to_osmline(record)
             line_list.append(line)
         print("converted query result to line list of size: ",
@@ -48,7 +48,7 @@ class OsmLoader:
         res = self.dbc.query_db(query)
         line_list = []
         for record in res:
-            line = db_records.OsmLineRecord.OsmLineRecord()
+            line = DTOs.OsmLineDTO.OsmLineDTO()
             line.record_to_osmline(record)
             line_list.append(line)
         print("converted query result to line list of size: ",
@@ -60,7 +60,7 @@ class OsmLoader:
         res = self.dbc.query_db(query)
         road_list = []
         for record in res:
-            road = db_records.OsmRoadRecord.OsmRoadRecord()
+            road = DTOs.OsmRoadDTO.OsmRoadDTO()
             road.record_to_osmroad(record)
             road_list.append(road)
         print("converted query result to road list of size: ",
@@ -72,7 +72,7 @@ class OsmLoader:
         res = self.dbc.query_db(query)
         line_list = []
         for record in res:
-            line = db_records.OsmLineRecord.OsmLineRecord()
+            line = DTOs.OsmLineDTO.OsmLineDTO()
             line.record_to_osmline(record)
             line_list.append(line)
         print("converted query result to line list of size: ",
@@ -80,7 +80,7 @@ class OsmLoader:
         return line_list
 
     def kill(self):
-        self.dbc.disconnect
+        self.dbc.disconnect()
 
 
 if __name__ == "__main__":

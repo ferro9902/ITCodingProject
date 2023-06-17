@@ -1,4 +1,4 @@
-class OsmRoadRecord:
+class OsmRoadDTO:
 
     def __init__(self):
         self.osm_id = None

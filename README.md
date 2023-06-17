@@ -30,7 +30,10 @@ where each of the tags identifies a specific parameter for the __osm2pgsql__ fun
 - ecc.
 
 ### STEP 3
-It was then necessary to install python module __psycopg2__
+It was then necessary to install a few python modules:
+
+1)  __psycopg2__ 
+2)  __tkinter__
 
 ### STEP 4
 At this point I was able to start to write the python code of the application

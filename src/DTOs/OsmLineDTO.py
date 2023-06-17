@@ -1,4 +1,4 @@
-class OsmLineRecord:
+class OsmLineDTO:
 
     def __init__(self):
         self.osm_id = None
