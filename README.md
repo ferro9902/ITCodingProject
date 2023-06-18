@@ -34,6 +34,7 @@ It was then necessary to install a few python modules:
 
 1)  __psycopg2__ 
 2)  __tkinter__
+3)  __shapely__
 
 ### STEP 4
 At this point I was able to start to write the python code of the application

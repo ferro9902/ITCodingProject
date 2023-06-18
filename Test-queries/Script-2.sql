@@ -32,3 +32,6 @@ ORDER BY ST_Distance(
   ST_SetSRID(ST_MakePoint(10.1587858, 45.1632988), 4326)
 ) ASC
 LIMIT 10;
+
+
+SELECT COUNT(*) AS line_count FROM planet_osm_line as pol WHERE ST_Intersects(pol.way, ST_SetSRID(ST_MakePoint(10.1587858, 45.1632988), 4326));

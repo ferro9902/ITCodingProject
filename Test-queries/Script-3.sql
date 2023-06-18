@@ -7,3 +7,5 @@ WHERE por.osm_id = 203270772;
 SELECT *
 FROM planet_osm_line pol
 WHERE pol.osm_id = 203270772;
+ 
+SELECT distinct por."highway" from planet_osm_roads por

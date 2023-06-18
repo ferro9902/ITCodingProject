@@ -1,4 +1,8 @@
-class OsmLineDTO:
+from shapely.wkb import loads
+import ast
+
+
+class OsmRoadDTO:
 
     def __init__(self):
         self.osm_id = None
@@ -72,7 +76,79 @@ class OsmLineDTO:
         self.tags = None
         self.way = None
 
-    def record_to_osmline(self, record: list[str]):
+    def init_from_ref(self, ref_obj: 'OsmRoadDTO'):
+        self.osm_id = ref_obj.osm_id
+        self.access = ref_obj.access
+        self.addr_housename = ref_obj.addr_housename
+        self.addr_housenumber = ref_obj.addr_housenumber
+        self.addr_interpolation = ref_obj.addr_interpolation
+        self.admin_level = ref_obj.admin_level
+        self.aerialway = ref_obj.aerialway
+        self.aeroway = ref_obj.aeroway
+        self.amenity = ref_obj.amenity
+        self.area = ref_obj.area
+        self.barrier = ref_obj.barrier
+        self.bicycle = ref_obj.bicycle
+        self.brand = ref_obj.brand
+        self.bridge = ref_obj.bridge
+        self.boundary = ref_obj.boundary
+        self.building = ref_obj.building
+        self.construction = ref_obj.construction
+        self.covered = ref_obj.covered
+        self.culvert = ref_obj.culvert
+        self.cutting = ref_obj.cutting
+        self.denomination = ref_obj.denomination
+        self.disused = ref_obj.disused
+        self.embankment = ref_obj.embankment
+        self.foot = ref_obj.foot
+        self.generator_source = ref_obj.generator_source
+        self.harbour = ref_obj.harbour
+        self.highway = ref_obj.highway
+        self.historic = ref_obj.historic
+        self.horse = ref_obj.horse
+        self.intermittent = ref_obj.intermittent
+        self.junction = ref_obj.junction
+        self.landuse = ref_obj.landuse
+        self.layer = ref_obj.layer
+        self.leisure = ref_obj.leisure
+        self.lock = ref_obj.lock
+        self.man_made = ref_obj.man_made
+        self.military = ref_obj.military
+        self.motorcar = ref_obj.motorcar
+        self.name = ref_obj.name
+        self.natural = ref_obj.natural
+        self.office = ref_obj.office
+        self.oneway = ref_obj.oneway
+        self.operator = ref_obj.operator
+        self.place = ref_obj.place
+        self.population = ref_obj.population
+        self.power = ref_obj.power
+        self.power_source = ref_obj.power_source
+        self.public_transport = ref_obj.public_transport
+        self.railway = ref_obj.railway
+        self.ref = ref_obj.ref
+        self.religion = ref_obj.religion
+        self.route = ref_obj.route
+        self.service = ref_obj.service
+        self.shop = ref_obj.shop
+        self.sport = ref_obj.sport
+        self.surface = ref_obj.surface
+        self.toll = ref_obj.toll
+        self.tourism = ref_obj.tourism
+        self.tower_type = ref_obj.tower_type
+        self.tracktype = ref_obj.tracktype
+        self.tunnel = ref_obj.tunnel
+        self.water = ref_obj.water
+        self.waterway = ref_obj.waterway
+        self.wetland = ref_obj.wetland
+        self.width = ref_obj.width
+        self.wood = ref_obj.wood
+        self.z_order = ref_obj.z_order
+        self.way_area = ref_obj.way_area
+        self.tags = ref_obj.tags
+        self.way = ref_obj.way
+
+    def record_to_osmroad(self, record: list[str]):
         self.osm_id = record[0]
         self.access = record[1]
         self.addr_housename = record[2]
@@ -141,8 +217,8 @@ class OsmLineDTO:
         self.wood = record[65]
         self.z_order = record[66]
         self.way_area = record[67]
-        self.tags = record[68]
-        self.way = record[69]
+        self.tags = ast.literal_eval("{" + record[68].replace("=>", ":") + "}")
+        self.way = loads(bytes.fromhex(record[69]))
 
     def __str__(self):
         return f"QueryRow(osm_id={self.osm_id}, access={self.access}, addr_housename={self.addr_housename}, " \
@@ -166,3 +242,8 @@ class OsmLineDTO:
                f"water={self.water}, waterway={self.waterway}, wetland={self.wetland}, width={self.width}, " \
                f"wood={self.wood}, z_order={self.z_order}, way_area={self.way_area}, tags={self.tags}, " \
                f"way={self.way})"
+
+    def __eq__(self, other):
+        if isinstance(other, OsmRoadDTO):
+            return self.osm_id == other.osm_id
+        return False

@@ -24,7 +24,7 @@ class CoordinatesInputForm:
         self.destination_longitude_entry = tk.Entry(self.form)
 
         submit_btn = tk.Button(self.form, text="Invio",
-                               command=self.submit_form())
+                               command=self.submit_form)
 
         start_lbl.grid(row=0, column=0, padx=10, pady=5)
         start_latitude_lbl.grid(row=1, column=0, padx=10, pady=5)
@@ -41,15 +41,18 @@ class CoordinatesInputForm:
         self.form.mainloop()
 
     def submit_form(self):
-        self.result = [DTOs.CoordinatesDTO]
+        print("submit button pressed")
+        self.result = [DTOs.CoordinatesDTO.CoordinatesDTO]
 
-        start = DTOs.CoordinatesDTO(
+        start = DTOs.CoordinatesDTO.CoordinatesDTO(
             self.start_latitude_entry, self.start_longitude_entry)
         self.result.append(start)
 
-        dest = DTOs.CoordinatesDTO(
+        dest = DTOs.CoordinatesDTO.CoordinatesDTO(
             self.destination_latitude_entry, self.destination_longitude_entry)
         self.result.append(dest)
+
+        self.form.destroy()
 
     def get_result(self):
         return self.result
@@ -58,4 +61,3 @@ class CoordinatesInputForm:
 if __name__ == "__main__":
     cif = CoordinatesInputForm()
     cif.create_form()
-    cif.wait_for_input()
