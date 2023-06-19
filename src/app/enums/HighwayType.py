@@ -11,5 +11,13 @@ class HighwayType(Enum):
     SECONDARY = "secondary"
     SECONDARY_LINK = "secondary_link"
     TERTIARY = "tertiary"
+    TERTIARY_LINK = "tertiary_link"
     TRUNK = "trunk"
     TRUNK_LINK = "trunk_link"
+
+    @classmethod
+    def resolve(cls, value: str):
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No member of {cls.__name__} has a value of {value}")

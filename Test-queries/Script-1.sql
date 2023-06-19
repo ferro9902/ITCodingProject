@@ -25,6 +25,17 @@ ORDER BY ST_Distance(
 ) ASC
 LIMIT 10 
 
+SELECT pol2.*
+FROM planet_osm_line AS pol1
+JOIN planet_osm_line AS pol2 ON ST_Intersects(pol1.way, pol2.way)
+WHERE pol1.osm_id = 815680410
+  AND pol1.highway = pol2.highway ;
+ 
+select *
+FROM planet_osm_polygon AS pop
+JOIN planet_osm_roads AS por ON ST_DWithin(ST_SetSRID(por.way, 4326), ST_SetSRID(pop.way, 4326), 0.0005)
+WHERE por.osm_id = 815680410
+
 -- select highway lines intersecting given coordinates
 SELECT *
 FROM planet_osm_line pol 
@@ -51,4 +62,4 @@ SELECT * FROM planet_osm_roads por WHERE ST_Intersects( por.way , ST_SetSRID(ST_
 SELECT * FROM planet_osm_line pol WHERE pol.highway IN ('living_street', 'motorway', 'motorway_link', 'primary', 'primary_link', 'residential', 'secondary', 'secondary_link', 'tertiary', 'trunk', 'trunk_link') ORDER BY ST_Distance( pol.way , ST_SetSRID(ST_MakePoint(10.1587859, 45.1632988), 4326) ) ASC LIMIT 1;
 
 
-SELECT COUNT(*) AS line_count FROM planet_osm_line as pol WHERE ST_Intersects(pol.way, ST_Point(10.1587858, 45.1632988, 4326)) AND por.highway IN ('living_street', 'motorway', 'motorway_link', 'primary', 'primary_link', 'residential', 'secondary', 'secondary_link', 'tertiary', 'trunk', 'trunk_link');
+SELECT COUNT(*) AS line_count FROM planet_osm_line as pol WHERE ST_Intersects(pol.way, ST_Point(10.1587858, 45.1632988, 4326)) AND pol.highway IN ('living_street', 'motorway', 'motorway_link', 'primary', 'primary_link', 'residential', 'secondary', 'secondary_link', 'tertiary', 'trunk', 'trunk_link');

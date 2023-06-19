@@ -1,0 +1,12 @@
+{
+    "car_acceleration": "localhost",
+    "no_speed_threshold": 80,
+    "house_ditance_threshold": 0.0002,
+    "house_number_threshold_for_urban_road": 10,
+    "motorway_maxspeed": 130,
+    "primary_extraurban_maxspeed": 110,
+    "secondary_extraurban_maxspeed": 90,
+    "primary_urban_maxspeed": 70,
+    "secondary_urban_maxspeed": 50,
+    "pedestrian_priority_zone_maxspeed": 30
+}

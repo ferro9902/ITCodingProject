@@ -1,10 +1,10 @@
 import psycopg2
-import ConfigLoader
+import ConfigLoaders.DbConfigLoader
 
 
 class DbConnector:
     def __init__(self):
-        cl = ConfigLoader.ConfigLoader()
+        cl = ConfigLoaders.DbConfigLoader.DbConfigLoader()
 
         self.ip = cl.get_param("ip")
         self.port = cl.get_param("port")

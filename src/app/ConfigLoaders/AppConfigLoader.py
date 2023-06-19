@@ -1,11 +1,11 @@
 import json
 
 
-class ConfigLoader:
+class AppConfigLoader:
 
     def __init__(self):
-        config_file = "src\\resources\\config.json"
-        self.config = ConfigLoader.load_config(config_file)
+        config_file = "src\\resources\\app_config.json"
+        self.config = AppConfigLoader.load_config(config_file)
 
     def load_config(file_path: str):
         with open(file_path, "r") as file:
