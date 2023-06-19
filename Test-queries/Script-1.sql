@@ -31,10 +31,10 @@ JOIN planet_osm_line AS pol2 ON ST_Intersects(pol1.way, pol2.way)
 WHERE pol1.osm_id = 815680410
   AND pol1.highway = pol2.highway ;
  
-select *
+select count(*)
 FROM planet_osm_polygon AS pop
-JOIN planet_osm_roads AS por ON ST_DWithin(ST_SetSRID(por.way, 4326), ST_SetSRID(pop.way, 4326), 0.0005)
-WHERE por.osm_id = 815680410
+JOIN planet_osm_roads AS por ON ST_DWithin(ST_SetSRID(por.way, 4326), ST_SetSRID(pop.way, 4326), 0.0002)
+WHERE por.osm_id = 815680410 and pop.building = 'yes'
 
 -- select highway lines intersecting given coordinates
 SELECT *
