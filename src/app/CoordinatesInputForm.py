@@ -5,7 +5,8 @@ import DTOs.CoordinatesDTO
 class CoordinatesInputForm:
 
     def __init__(self) -> None:
-        self.result = None
+        self.start = None
+        self.dest = None
 
     def create_form(self):
         self.form = tk.Tk()
@@ -44,18 +45,13 @@ class CoordinatesInputForm:
         print("submit button pressed")
         self.result = [DTOs.CoordinatesDTO.CoordinatesDTO]
 
-        start = DTOs.CoordinatesDTO.CoordinatesDTO(
+        self.start = DTOs.CoordinatesDTO.CoordinatesDTO(
             self.start_latitude_entry, self.start_longitude_entry)
-        self.result.append(start)
 
-        dest = DTOs.CoordinatesDTO.CoordinatesDTO(
+        self.dest = DTOs.CoordinatesDTO.CoordinatesDTO(
             self.destination_latitude_entry, self.destination_longitude_entry)
-        self.result.append(dest)
 
         self.form.destroy()
-
-    def get_result(self):
-        return self.result
 
 
 if __name__ == "__main__":

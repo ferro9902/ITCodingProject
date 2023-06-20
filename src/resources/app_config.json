@@ -8,5 +8,6 @@
     "secondary_extraurban_maxspeed": 90,
     "primary_urban_maxspeed": 70,
     "secondary_urban_maxspeed": 50,
-    "pedestrian_priority_zone_maxspeed": 30
+    "pedestrian_priority_zone_maxspeed": 30,
+    "0-60_acceleration": 2.5
 }

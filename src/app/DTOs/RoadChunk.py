@@ -5,12 +5,12 @@ import DTOs.OsmRoadDTO as OsmRoadDTO
 class RoadChunk:
 
     def __init__(self) -> None:
-        self.prev_chunk = None
+        self.prev_chunk = RoadChunk()
         self.speed_limit = None
-        self.start_coord = None
-        self.dest_coord = None
+        self.start_coord = CoordinatesDTO.CoordinatesDTO()
+        self.dest_coord = CoordinatesDTO.CoordinatesDTO()
         self.weigh = None
-        self.road = None
+        self.road = OsmRoadDTO.OsmRoadDTO()
 
     def __init__(self, prev_chunk: 'RoadChunk', speed_limit: int, start_coord: CoordinatesDTO.CoordinatesDTO, dest_coord: CoordinatesDTO.CoordinatesDTO, weigh: int, road: OsmRoadDTO.OsmRoadDTO) -> None:
         self.prev_chunk = prev_chunk
@@ -19,3 +19,9 @@ class RoadChunk:
         self.dest_coord = dest_coord
         self.weigh = weigh
         self.road = road
+
+    def get_full_weight(self):
+        if (self.prev_chunk != None):
+            return self.weigh + self.prev_chunk.get_full_weight()
+        else:
+            return self.weigh

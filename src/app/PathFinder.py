@@ -19,14 +19,27 @@ class PathFinder:
     def resolve(self) -> bool:
         self.ol = OsmLoader.OsmLoader()
         self.ol.start()
+        completed = False
 
         self.start_coord = self.ol.correct_coordinate(self.start_coord)
         self.dest_coord = self.ol.correct_coordinate(self.dest_coord)
 
-        self.start_iter()
-        # TODO
+        completed = self.start_iter()
 
-    def start_iter(self):
+        while (not completed):
+            completed = self.iter()
+
+    def get_shortest_path(self) -> list[RoadChunk.RoadChunk]:
+        final_chunk = [
+            obj for obj in self.queue if self.dest_coord == obj.dest_coord][0]
+        step = final_chunk
+        step_list = [RoadChunk.RoadChunk]
+        while (step != None):
+            step_list.append(step)
+            step = step.prev_chunk
+        return reversed(step_list)
+
+    def start_iter(self) -> bool:
         print("starting first iteration of algorithm")
         roads_on_startnode = self.ol.load_merged_from_latlong(
             self.start_coord.latitude, self.start_coord.longitude)
@@ -56,6 +69,10 @@ class PathFinder:
                                 maxspeed, self.start_coord, next_coord_dto)
                             self.queue.append(RoadChunk.RoadChunk(
                                 None, maxspeed, self.start_coord, next_coord_dto, weight))
+
+                            if ((prev_coord[1] != self.dest_coord.latitude and prev_coord[0] != self.dest_coord.longitude) or (next_coord[1] != self.dest_coord.latitude and next_coord[0] != self.dest_coord.longitude)):
+                                return True
+
                         elif (i > 0):
                             print(
                                 "consider only previous node (check if it is destination)")
@@ -66,6 +83,10 @@ class PathFinder:
                                 maxspeed, self.start_coord, prev_coord_dto)
                             self.queue.append(RoadChunk.RoadChunk(
                                 None, maxspeed, self.start_coord, prev_coord_dto, weight))
+
+                            if (prev_coord[1] != self.dest_coord.latitude and prev_coord[0] != self.dest_coord.longitude):
+                                return True
+
                         elif (i < coord_list_len):
                             print(
                                 "consider only next node (check if it is destination)")
@@ -76,25 +97,188 @@ class PathFinder:
                                 maxspeed, self.start_coord, next_coord_dto)
                             self.queue.append(RoadChunk.RoadChunk(
                                 None, maxspeed, self.start_coord, next_coord_dto, weight))
+
+                            if ((next_coord[1] != self.dest_coord.latitude and next_coord[0] != self.dest_coord.longitude)):
+                                return True
+
+                        else:
+                            print(
+                                "impossible to calculate path")
+                            raise ValueError("Invalid start coordinate input")
+                    else:
+                        print("road is one way")
+                        if (i < coord_list_len):
+                            print(
+                                "consider only next node (check if it is destination)")
+                            next_coord = coord_list[i+1]
+                            next_coord_dto = CoordinatesDTO.CoordinatesDTO(
+                                next_coord[1], next_coord[0])
+                            weight = self.compute_roadchunk_weight(
+                                maxspeed, self.start_coord, next_coord_dto)
+                            self.queue.append(RoadChunk.RoadChunk(
+                                None, maxspeed, self.start_coord, next_coord_dto, weight))
+
+                            if ((next_coord[1] != self.dest_coord.latitude and next_coord[0] != self.dest_coord.longitude)):
+                                return True
+
                         else:
                             print(
                                 "impossible to calculate path")
                             raise ValueError("Invalid start coordinate input")
 
+    def iter(self) -> bool:
+        min_weight_chunk = min(
+            self.queue, key=lambda obj: obj.get_full_weight())
+        self.queue.pop(min_weight_chunk)
+        print("found min weight chunk for next iteration: ", min_weight_chunk)
+        roads_after_min_weight_chunk = self.ol.load_merged_from_latlong(
+            min_weight_chunk.dest_coord.latitude, min_weight_chunk.dest_coord.longitude)
+        for road in roads_after_min_weight_chunk:
+            road = OsmRoadDTO.OsmRoadDTO(road)
+            maxspeed = self.compute_maxspeed(road, min_weight_chunk)
+            coord_list = road.way.coords
+            coord_list_len = len(coord_list)
+            for i in range(coord_list_len):
+                if (coord_list[i][0] == float(min_weight_chunk.dest_coord.longitude)) and (coord_list[i][1] == float(min_weight_chunk.dest_coord.latitude)):
+                    if (road.oneway == None):
+                        if (i > 0 and i < coord_list_len):
+                            print(
+                                "consider previous and next node too (check if they are destination)")
+                            prev_coord = coord_list[i-1]
+                            if (prev_coord[1] != min_weight_chunk.start_coord.latitude and prev_coord[0] != min_weight_chunk.start_coord.longitude):
+                                prev_coord_dto = CoordinatesDTO.CoordinatesDTO(
+                                    prev_coord[1], prev_coord[0])
+                                weight = self.compute_roadchunk_weight(
+                                    maxspeed, min_weight_chunk.dest_coord, prev_coord_dto)
+                                prev_chunk = RoadChunk.RoadChunk(
+                                    min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, prev_coord_dto, weight)
+                                if (not any(prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                    self.queue.append(prev_chunk)
+                                else:
+                                    already_visited_same_chunk = [
+                                        obj for obj in self.visited if prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord][0]
+                                    if (already_visited_same_chunk.get_full_weight() > prev_chunk.get_full_weight()):
+                                        already_visited_same_chunk.prev_chunk = prev_chunk.prev_chunk
+                                        already_visited_same_chunk.weigh = prev_chunk.weigh
+
+                            next_coord = coord_list[i+1]
+                            if (next_coord[1] != min_weight_chunk.start_coord.latitude and next_coord[0] != min_weight_chunk.start_coord.longitude):
+                                next_coord_dto = CoordinatesDTO.CoordinatesDTO(
+                                    next_coord[1], next_coord[0])
+                                weight = self.compute_roadchunk_weight(
+                                    maxspeed, min_weight_chunk.dest_coord, next_coord_dto)
+                                next_chunk = RoadChunk.RoadChunk(
+                                    min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto, weight)
+                                if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                    self.queue.append(next_chunk)
+                                else:
+                                    already_visited_same_chunk = [
+                                        obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
+                                    if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
+                                        already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
+                                        already_visited_same_chunk.weigh = next_chunk.weigh
+
+                            if ((prev_coord[1] != self.dest_coord.latitude and prev_coord[0] != self.dest_coord.longitude) or (next_coord[1] != self.dest_coord.latitude and next_coord[0] != self.dest_coord.longitude)):
+                                return True
+
+                        elif (i > 0):
+                            print(
+                                "consider only previous node (check if it is destination)")
+                            prev_coord = coord_list[i-1]
+                            if (prev_coord[1] != min_weight_chunk.start_coord.latitude and prev_coord[0] != min_weight_chunk.start_coord.longitude):
+                                prev_coord_dto = CoordinatesDTO.CoordinatesDTO(
+                                    prev_coord[1], prev_coord[0])
+                                weight = self.compute_roadchunk_weight(
+                                    maxspeed, min_weight_chunk.dest_coord, prev_coord_dto)
+                                prev_chunk = RoadChunk.RoadChunk(
+                                    min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, prev_coord_dto, weight)
+                                if (not any(prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                    self.queue.append(prev_chunk)
+                                else:
+                                    already_visited_same_chunk = [
+                                        obj for obj in self.visited if prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord][0]
+                                    if (already_visited_same_chunk.get_full_weight() > prev_chunk.get_full_weight()):
+                                        already_visited_same_chunk.prev_chunk = prev_chunk.prev_chunk
+                                        already_visited_same_chunk.weigh = prev_chunk.weigh
+
+                            if (prev_coord[1] != self.dest_coord.latitude and prev_coord[0] != self.dest_coord.longitude):
+                                return True
+
+                        elif (i < coord_list_len):
+                            print(
+                                "consider only next node (check if it is destination)")
+                            next_coord = coord_list[i+1]
+                            if (next_coord[1] != min_weight_chunk.start_coord.latitude and next_coord[0] != min_weight_chunk.start_coord.longitude):
+                                next_coord_dto = CoordinatesDTO.CoordinatesDTO(
+                                    next_coord[1], next_coord[0])
+                                weight = self.compute_roadchunk_weight(
+                                    maxspeed, min_weight_chunk.dest_coord, next_coord_dto)
+                                next_chunk = RoadChunk.RoadChunk(
+                                    min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto, weight)
+                                if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                    self.queue.append(next_chunk)
+                                else:
+                                    already_visited_same_chunk = [
+                                        obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
+                                    if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
+                                        already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
+                                        already_visited_same_chunk.weigh = next_chunk.weigh
+
+                            if ((next_coord[1] != self.dest_coord.latitude and next_coord[0] != self.dest_coord.longitude)):
+                                return True
+                    else:
+                        print("road is one way")
+                        if (i < coord_list_len):
+                            print(
+                                "consider only next node (check if it is destination)")
+                            next_coord = coord_list[i+1]
+                            if (next_coord[1] != min_weight_chunk.start_coord.latitude and next_coord[0] != min_weight_chunk.start_coord.longitude):
+                                next_coord_dto = CoordinatesDTO.CoordinatesDTO(
+                                    next_coord[1], next_coord[0])
+                                weight = self.compute_roadchunk_weight(
+                                    maxspeed, min_weight_chunk.dest_coord, next_coord_dto)
+                                next_chunk = RoadChunk.RoadChunk(
+                                    min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto, weight)
+                                if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                    self.queue.append(next_chunk)
+                                else:
+                                    already_visited_same_chunk = [
+                                        obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
+                                    if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
+                                        already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
+                                        already_visited_same_chunk.weigh = next_chunk.weigh
+
+                            if ((next_coord[1] != self.dest_coord.latitude and next_coord[0] != self.dest_coord.longitude)):
+                                return True
+        return False
+
     def compute_roadchunk_weight(self, prev_chunk: RoadChunk.RoadChunk, speed: str, start_coord: CoordinatesDTO.CoordinatesDTO, dest_coord: CoordinatesDTO.CoordinatesDTO):
-        # TODO
         speed = float(speed)
+        dist = self.coord_distance(start_coord, dest_coord)
         if (prev_chunk == None):
-            dist = self.coord_distance(start_coord, dest_coord)
             return dist/speed
         else:
             angle = self.coord_angle_diff(prev_chunk, start_coord, dest_coord)
+            # car acceleration in m/s^2
+            acceleration = self.cl.get_param["0-60_acceleration"]
             if (angle <= self.cl.get_param("no_speed_threshold")):
                 print("positive initial speed")
-                # TODO calculate initial speed based on angle from maxspeed
+                start_speed = 0
+                return self.time_to_cover(dist, start_speed, speed, acceleration)
             else:
                 print("no initial speed")
-                # TODO
+                start_speed = 0
+                return self.time_to_cover(dist, start_speed, speed, acceleration)
+
+    def time_to_cover(self, distance, initial_speed, max_speed, acceleration):
+        time_to_max_speed = (max_speed-initial_speed)/acceleration
+        acceleration_distance = initial_speed * time_to_max_speed + \
+            1/2*acceleration*(time_to_max_speed**2)
+
+        if distance <= acceleration_distance:
+            return (2 * distance / acceleration) ** 0.5
+        else:
+            return time_to_max_speed + (distance - acceleration_distance)/max_speed
 
     def compute_maxspeed(self, road: OsmRoadDTO.OsmRoadDTO, prev_chunk: RoadChunk.RoadChunk) -> int:
         if (road.tags["maxspeed"] != None):
