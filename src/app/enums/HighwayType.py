@@ -1,6 +1,8 @@
 from enum import Enum
 
 
+# OpenStreetMap highway types enumerator
+
 class HighwayType(Enum):
     LIVING_STREET = "living_street"
     MOTORWAY = "motorway"
@@ -21,3 +23,6 @@ class HighwayType(Enum):
             if member.value == value:
                 return member
         raise ValueError(f"No member of {cls.__name__} has a value of {value}")
+
+    def __eq__(self, __value: object) -> bool:
+        return super().__eq__(__value)

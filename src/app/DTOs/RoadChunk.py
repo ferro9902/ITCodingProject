@@ -1,6 +1,8 @@
-import DTOs.CoordinatesDTO as CoordinatesDTO
-import DTOs.OsmRoadDTO as OsmRoadDTO
+import app.DTOs.CoordinatesDTO as CoordinatesDTO
+import app.DTOs.OsmRoadDTO as OsmRoadDTO
 
+
+# Data Transfer Object for roadchunks
 
 class RoadChunk:
 

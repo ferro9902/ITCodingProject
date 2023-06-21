@@ -1,6 +1,8 @@
 import json
 
 
+# application configuration parameters loader
+
 class AppConfigLoader:
 
     def __init__(self):

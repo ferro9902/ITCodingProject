@@ -2,6 +2,8 @@ from shapely.wkb import loads
 import ast
 
 
+# Data Transfer Object for DB records
+
 class OsmRoadDTO:
 
     def __init__(self):

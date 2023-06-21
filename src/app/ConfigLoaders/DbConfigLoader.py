@@ -1,6 +1,8 @@
 import json
 
 
+# DB connection configuration parameters loader
+
 class DbConfigLoader:
 
     def __init__(self):

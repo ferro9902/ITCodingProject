@@ -1,10 +1,12 @@
 import psycopg2
-import ConfigLoaders.DbConfigLoader
+import app.ConfigLoaders.DbConfigLoader as DbConfigLoader
 
+
+# Database connector class used to connect and then query the DB
 
 class DbConnector:
     def __init__(self):
-        cl = ConfigLoaders.DbConfigLoader.DbConfigLoader()
+        cl = DbConfigLoader.DbConfigLoader()
 
         self.ip = cl.get_param("ip")
         self.port = cl.get_param("port")

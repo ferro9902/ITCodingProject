@@ -1,3 +1,4 @@
+# Data Transfer Object for coordinates
 class CoordinatesDTO:
 
     def __init__(self):
