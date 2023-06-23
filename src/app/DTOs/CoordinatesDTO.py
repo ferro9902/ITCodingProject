@@ -14,3 +14,6 @@ class CoordinatesDTO:
             if (other_obj.latitude == self.latitude and other_obj.longitude == self.longitude):
                 return True
         return False
+
+    def __str__(self):
+        return f"(latitute, longitude) = ({self.latitude}, {self.longitude})"

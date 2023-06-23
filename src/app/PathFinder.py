@@ -10,8 +10,8 @@ from math import radians, sin, cos, sqrt, atan2, degrees, asin
 class PathFinder:
 
     def __init__(self, start_coord: CoordinatesDTO.CoordinatesDTO, dest_coord: CoordinatesDTO.CoordinatesDTO) -> None:
-        self.visited = [RoadChunk.RoadChunk]
-        self.queue = [RoadChunk.RoadChunk]
+        self.visited = []
+        self.queue = []
         self.start_coord = start_coord
         self.dest_coord = dest_coord
         self.cl = APPConfigLoader.AppConfigLoader()
@@ -34,16 +34,16 @@ class PathFinder:
         self.ol.kill()
 
 # Method to return the shortest path (used after the algorithm completed all iterations)
-    def get_shortest_path(self) -> list[RoadChunk.RoadChunk]:
+    def get_shortest_path(self) -> list:
         # Find the list with the shortest path to the destination and transform the nested RoadChunks into a linear list going from the start coordinate to the destination coordinate
         final_chunk = [
             obj for obj in self.queue if self.dest_coord == obj.dest_coord][0]
         step = final_chunk
-        step_list = [RoadChunk.RoadChunk]
+        step_list = []
         while (step != None):
             step_list.append(step)
             step = step.prev_chunk
-        return reversed(step_list)
+        return list(reversed(step_list))
 
 # First iteration of the algorithm
     def start_iter(self) -> bool:
@@ -62,7 +62,7 @@ class PathFinder:
                 if (long == float(self.start_coord.longitude)) and (lat == float(self.start_coord.latitude)):
                     # if the road is not unidirectional add to the queue the roadchunks that go in either direction (if possible)
                     if (road.oneway == None or road.oneway == 'no'):
-                        if (i > 0 and i < coord_list_len):
+                        if (i > 0 and i < coord_list_len-1):
                             print(
                                 "consider previous and next node too (check if they are destination)")
                             prev_coord = coord_list[i-1]
@@ -100,7 +100,7 @@ class PathFinder:
                             if (prev_coord[1] == self.dest_coord.latitude and prev_coord[0] == self.dest_coord.longitude):
                                 return True
 
-                        elif (i < coord_list_len):
+                        elif (i < coord_list_len-1):
                             print(
                                 "consider only next node (check if it is destination)")
                             next_coord = coord_list[i+1]
@@ -122,7 +122,7 @@ class PathFinder:
                     else:
                         # if the road is unidirectional add to the queue only the chunk of road that follows the direction of flow of the road
                         print("road is one way")
-                        if (i < coord_list_len):
+                        if (i < coord_list_len-1):
                             print(
                                 "consider only next node (check if it is destination)")
                             next_coord = coord_list[i+1]
@@ -141,22 +141,22 @@ class PathFinder:
                             print(
                                 "impossible to calculate path")
                             raise ValueError("Invalid start coordinate input")
-                    continue
+                    break
         return False
 
 # method that represents a single iteration of the algorithm (similar to the first iteration but with some key differences)
     def iter(self) -> bool:
         # extract the chunk with the minimum weight from the queue of nodes to be visited and remove it from the queue
         min_weight_chunk = min(
-            self.queue, key=lambda obj: obj.get_full_weight)
+            self.queue, key=lambda obj: obj.get_full_weight())
         self.queue.pop(self.queue.index(min_weight_chunk))
+        self.visited.append(min_weight_chunk)
         print("found min weight chunk for next iteration: ", min_weight_chunk)
         # extract all of the roads (different from the starting road chunk) that connect to the end of the minimum weight road chunk
         roads_after_min_weight_chunk = self.ol.load_merged_from_latlong(
             min_weight_chunk.dest_coord.latitude, min_weight_chunk.dest_coord.longitude)
         for road in roads_after_min_weight_chunk:
             # for each road extract max speed and list of coordinates
-            road = OsmRoadDTO.OsmRoadDTO(road)
             maxspeed = self.compute_maxspeed(road, min_weight_chunk)
             coord_list = road.way.coords
             coord_list_len = len(coord_list)
@@ -167,7 +167,7 @@ class PathFinder:
                 if (long == float(min_weight_chunk.dest_coord.longitude)) and (lat == float(min_weight_chunk.dest_coord.latitude)):
                     if (road.oneway == None or road.oneway == 'no'):
                         # if the road is not unidirectional add to the queue the roadchunks that go in either direction (if possible)
-                        if (i > 0 and i < coord_list_len):
+                        if (i > 0 and i < coord_list_len-1):
                             print(
                                 "consider previous and next node too (check if they are destination)")
                             prev_coord = coord_list[i-1]
@@ -178,14 +178,25 @@ class PathFinder:
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, prev_coord_dto)
                                 prev_chunk = RoadChunk.RoadChunk(
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, prev_coord_dto, weight, road)
-                                if (not any(prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
-                                    self.queue.append(prev_chunk)
-                                else:
-                                    already_visited_same_chunk = [
-                                        obj for obj in self.visited if prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord][0]
-                                    if (already_visited_same_chunk.get_full_weight() > prev_chunk.get_full_weight()):
-                                        already_visited_same_chunk.prev_chunk = prev_chunk.prev_chunk
-                                        already_visited_same_chunk.weigh = prev_chunk.weigh
+                                # checking that the chunk is not going back a direction that has already been visited
+                                if (not any(prev_chunk.dest_coord == obj.start_coord and prev_chunk.start_coord == obj.dest_coord for obj in self.visited)):
+                                    if (not any(prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                        self.queue.append(prev_chunk)
+                                        print(
+                                            f"------------------------------------------appended previous roadchunk to queue going from ({prev_chunk.start_coord.latitude}, {prev_chunk.start_coord.longitude}) to ({prev_chunk.dest_coord.latitude}, {prev_chunk.dest_coord.longitude})")
+                                    else:
+                                        print(
+                                            "this previous roadchunk has already been visited")
+                                        already_visited_same_chunk = [
+                                            obj for obj in self.visited if prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord][0]
+                                        if (already_visited_same_chunk.get_full_weight() > prev_chunk.get_full_weight()):
+                                            already_visited_same_chunk.prev_chunk = prev_chunk.prev_chunk
+                                            already_visited_same_chunk.weigh = prev_chunk.weigh
+                                            print(
+                                                "updating weight and path as the current one is shorter")
+                            else:
+                                print(
+                                    "the considered previuos coordinate goes back where we came from")
 
                             next_coord = coord_list[i+1]
                             if (next_coord[1] != min_weight_chunk.start_coord.latitude and next_coord[0] != min_weight_chunk.start_coord.longitude):
@@ -195,14 +206,25 @@ class PathFinder:
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto)
                                 next_chunk = RoadChunk.RoadChunk(
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto, weight, road)
-                                if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
-                                    self.queue.append(next_chunk)
-                                else:
-                                    already_visited_same_chunk = [
-                                        obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
-                                    if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
-                                        already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
-                                        already_visited_same_chunk.weigh = next_chunk.weigh
+                                # checking that the chunk is not going back a direction that has already been visited
+                                if (not any(next_chunk.dest_coord == obj.start_coord and next_chunk.start_coord == obj.dest_coord for obj in self.visited)):
+                                    if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                        self.queue.append(next_chunk)
+                                        print(
+                                            f"------------------------------------------appended successive roadchunk to queue going from ({next_chunk.start_coord.latitude}, {next_chunk.start_coord.longitude}) to ({next_chunk.dest_coord.latitude}, {next_chunk.dest_coord.longitude})")
+                                    else:
+                                        print(
+                                            "this successive roadchunk has already been visited")
+                                        already_visited_same_chunk = [
+                                            obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
+                                        if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
+                                            already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
+                                            already_visited_same_chunk.weigh = next_chunk.weigh
+                                            print(
+                                                "updating weight and path as the current one is shorter")
+                            else:
+                                print(
+                                    "the considered successive coordinate goes back where we came from")
 
                             # check if the destination has been reached
                             if ((prev_coord[1] == self.dest_coord.latitude and prev_coord[0] == self.dest_coord.longitude) or (next_coord[1] == self.dest_coord.latitude and next_coord[0] == self.dest_coord.longitude)):
@@ -219,20 +241,31 @@ class PathFinder:
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, prev_coord_dto)
                                 prev_chunk = RoadChunk.RoadChunk(
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, prev_coord_dto, weight, road)
-                                if (not any(prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
-                                    self.queue.append(prev_chunk)
-                                else:
-                                    already_visited_same_chunk = [
-                                        obj for obj in self.visited if prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord][0]
-                                    if (already_visited_same_chunk.get_full_weight() > prev_chunk.get_full_weight()):
-                                        already_visited_same_chunk.prev_chunk = prev_chunk.prev_chunk
-                                        already_visited_same_chunk.weigh = prev_chunk.weigh
+                                # checking that the chunk is not going back a direction that has already been visited
+                                if (not any(prev_chunk.dest_coord == obj.start_coord and prev_chunk.start_coord == obj.dest_coord for obj in self.visited)):
+                                    if (not any(prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                        self.queue.append(prev_chunk)
+                                        print(
+                                            f"------------------------------------------appended previous roadchunk to queue going from ({prev_chunk.start_coord.latitude}, {prev_chunk.start_coord.longitude}) to ({prev_chunk.dest_coord.latitude}, {prev_chunk.dest_coord.longitude})")
+                                    else:
+                                        print(
+                                            "this previuos roadchunk has already been visited")
+                                        already_visited_same_chunk = [
+                                            obj for obj in self.visited if prev_chunk.start_coord == obj.start_coord and prev_chunk.dest_coord == obj.dest_coord][0]
+                                        if (already_visited_same_chunk.get_full_weight() > prev_chunk.get_full_weight()):
+                                            already_visited_same_chunk.prev_chunk = prev_chunk.prev_chunk
+                                            already_visited_same_chunk.weigh = prev_chunk.weigh
+                                            print(
+                                                "updating weight and path as the current one is shorter")
+                            else:
+                                print(
+                                    "the considered previuos coordinate goes back where we came from")
 
                             # check if the destination has been reached
                             if (prev_coord[1] == self.dest_coord.latitude and prev_coord[0] == self.dest_coord.longitude):
                                 return True
 
-                        elif (i < coord_list_len):
+                        elif (i < coord_list_len-1):
                             print(
                                 "consider only next node (check if it is destination)")
                             next_coord = coord_list[i+1]
@@ -243,14 +276,25 @@ class PathFinder:
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto)
                                 next_chunk = RoadChunk.RoadChunk(
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto, weight, road)
-                                if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
-                                    self.queue.append(next_chunk)
-                                else:
-                                    already_visited_same_chunk = [
-                                        obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
-                                    if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
-                                        already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
-                                        already_visited_same_chunk.weigh = next_chunk.weigh
+                                # checking that the chunk is not going back a direction that has already been visited
+                                if (not any(next_chunk.dest_coord == obj.start_coord and next_chunk.start_coord == obj.dest_coord for obj in self.visited)):
+                                    if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                        self.queue.append(next_chunk)
+                                        print(
+                                            f"------------------------------------------appended successive roadchunk to queue going from ({next_chunk.start_coord.latitude}, {next_chunk.start_coord.longitude}) to ({next_chunk.dest_coord.latitude}, {next_chunk.dest_coord.longitude})")
+                                    else:
+                                        print(
+                                            "this successive roadchunk has already been visited")
+                                        already_visited_same_chunk = [
+                                            obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
+                                        if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
+                                            already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
+                                            already_visited_same_chunk.weigh = next_chunk.weigh
+                                            print(
+                                                "updating weight and path as the current one is shorter")
+                            else:
+                                print(
+                                    "the considered successive coordinate goes back where we came from")
 
                             # check if the destination has been reached
                             if ((next_coord[1] == self.dest_coord.latitude and next_coord[0] == self.dest_coord.longitude)):
@@ -258,7 +302,7 @@ class PathFinder:
                     else:
                         # if the road is unidirectional add to the queue only the chunk of road that follows the direction of flow of the road
                         print("road is one way")
-                        if (i < coord_list_len):
+                        if (i < coord_list_len-1):
                             print(
                                 "consider only next node (check if it is destination)")
                             next_coord = coord_list[i+1]
@@ -269,19 +313,33 @@ class PathFinder:
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto)
                                 next_chunk = RoadChunk.RoadChunk(
                                     min_weight_chunk, maxspeed, min_weight_chunk.dest_coord, next_coord_dto, weight, road)
-                                if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
-                                    self.queue.append(next_chunk)
-                                else:
-                                    already_visited_same_chunk = [
-                                        obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
-                                    if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
-                                        already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
-                                        already_visited_same_chunk.weigh = next_chunk.weigh
+                                # checking that the chunk is not going back a direction that has already been visited
+                                if (not any(next_chunk.dest_coord == obj.start_coord and next_chunk.start_coord == obj.dest_coord for obj in self.visited)):
+                                    if (not any(next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord for obj in self.visited)):
+                                        self.queue.append(next_chunk)
+                                        print(
+                                            f"------------------------------------------appended successive roadchunk to queue going from ({next_chunk.start_coord.latitude}, {next_chunk.start_coord.longitude}) to ({next_chunk.dest_coord.latitude}, {next_chunk.dest_coord.longitude})")
+                                    else:
+                                        print(
+                                            "this successive roadchunk has already been visited")
+                                        already_visited_same_chunk = [
+                                            obj for obj in self.visited if next_chunk.start_coord == obj.start_coord and next_chunk.dest_coord == obj.dest_coord][0]
+                                        if (already_visited_same_chunk.get_full_weight() > next_chunk.get_full_weight()):
+                                            already_visited_same_chunk.prev_chunk = next_chunk.prev_chunk
+                                            already_visited_same_chunk.weigh = next_chunk.weigh
+                                            print(
+                                                "updating weight and path as the current one is shorter")
+                            else:
+                                print(
+                                    "the considered successive coordinate goes back where we came from")
 
                             # check if the destination has been reached
                             if ((next_coord[1] == self.dest_coord.latitude and next_coord[0] == self.dest_coord.longitude)):
                                 return True
-                    continue
+                        else:
+                            print(
+                                "no useful coordinate has been found as the road is unidirectional and we are already at its end")
+                    break
         return False
 
 # compute the roadchunk weight (time to cross it) based on the maximum possible speed on it, and on the angle that it forms with the previous road chunk
@@ -297,9 +355,10 @@ class PathFinder:
             return dist/speed
         else:
             # if we have a previous road chunk we take into account the angle between it and the current chunk
-            angle = self.coord_angle_diff(prev_chunk, start_coord, dest_coord)
+            angle = self.coord_angle_diff(
+                prev_chunk.start_coord, start_coord, dest_coord)
             # car acceleration in m/s^2 (taken from the application configuration parameters)
-            acceleration = self.cl.get_param["0-60_acceleration"]
+            acceleration = self.cl.get_param("0-60_acceleration")
 
             # we are going to reduce the initial speed in the current road chunk more, the higher is the angle between the two
             # if the angle is lower than the 'no_speed_threshold' we consider the initial speed as a function of the angle

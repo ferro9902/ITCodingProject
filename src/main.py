@@ -12,7 +12,13 @@ pf = PathFinder.PathFinder(start_coord, dest_coord)
 pf.resolve()
 path = pf.get_shortest_path()
 
-print("total estimated time = ", path[-1].get_full_weight())
+seconds = path[-1].get_full_weight()
+hours = round(seconds // 3600)
+minutes = round((seconds % 3600) // 60)
+seconds = round(seconds % 60)
+
+print(
+    f"total estimated time {hours} hours, {minutes} minutes and {seconds} seconds")
 
 for obj in path:
     print(obj)

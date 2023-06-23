@@ -22,8 +22,12 @@ class RoadChunk:
         self.weigh = weigh
         self.road = road
 
+    # iteratively compute the full weight for the given chunk with all of the previuos chunks
     def get_full_weight(self):
         if (self.prev_chunk != None):
             return self.weigh + self.prev_chunk.get_full_weight()
         else:
             return self.weigh
+
+    def __str__(self):
+        return f"RoadChunk going from [{self.start_coord}] to [{self.dest_coord}] at speed [{self.speed_limit}] in seconds [{round(self.weigh)}]"

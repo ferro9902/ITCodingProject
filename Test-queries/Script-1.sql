@@ -31,10 +31,41 @@ JOIN planet_osm_line AS pol2 ON ST_Intersects(pol1.way, pol2.way)
 WHERE pol1.osm_id = 815680410
   AND pol1.highway = pol2.highway ;
  
-select count(*)
+select *
 FROM planet_osm_polygon AS pop
-JOIN planet_osm_roads AS por ON ST_DWithin(ST_SetSRID(por.way, 4326), ST_SetSRID(pop.way, 4326), 0.0002)
-WHERE por.osm_id = 815680410 and pop.building = 'yes'
+JOIN planet_osm_line AS pol ON ST_DWithin(ST_SetSRID(pol.way, 4326), ST_SetSRID(pop.way, 4326), 0.0002)
+WHERE pol.osm_id = 107818039 and pop.building is not null and lower(pop.building) != 'no' 
+
+EXPLAIN analyze SELECT *
+FROM planet_osm_polygon AS pop
+JOIN planet_osm_line AS pol ON ST_DWithin(ST_Simplify(ST_SetSRID(pol.way, 4326), 0.001), ST_Simplify(ST_SetSRID(pop.way, 4326), 0.001), 0.0002)
+WHERE pol.osm_id = 107818039 AND pop.building IS NOT NULL AND LOWER(pop.building) != LOWER('no')
+
+EXPLAIN analyze SELECT count(*)
+FROM planet_osm_polygon AS pop
+WHERE ST_DWithin(ST_SetSRID(pop.way, 4326), ST_SetSRID((
+    SELECT pol.way
+    FROM planet_osm_line AS pol
+    WHERE pol.osm_id = 107818039
+), 4326), 0.0003)
+  AND pop.building IS NOT NULL
+  AND LOWER(pop.building) != 'no'
+
+CREATE INDEX idx_osm_polygon_way ON planet_osm_polygon USING GIST(way);
+CREATE INDEX idx_osm_line_way ON planet_osm_line USING GIST(way);
+CREATE INDEX idx_osm_line_osm_id ON planet_osm_line (osm_id);
+CREATE INDEX idx_osm_polygon_building ON planet_osm_polygon (building);
+  
+DROP INDEX idx_osm_polygon_way;
+DROP INDEX idx_osm_line_way;
+DROP INDEX idx_osm_line_osm_id;
+DROP INDEX idx_osm_polygon_building;
+
+
+set max_parallel_workers = 16;
+SET max_parallel_workers_per_gather = 8;
+SET work_mem = '2000MB';
+  
 
 -- select highway lines intersecting given coordinates
 SELECT *

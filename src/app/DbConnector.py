@@ -38,8 +38,6 @@ class DbConnector:
             cursor = self.conn.cursor()
             cursor.execute(query)
             records = cursor.fetchall()
-            print(
-                f"found [{len(records)}] records from query: {query}")
             return records
         except (Exception, psycopg2.Error) as error:
             print("Query Error:", error)

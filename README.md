@@ -1,5 +1,3 @@
-# __WORK IN PROGRESS__ (to complete tests)
-
 # IT CODING PROJECT
 ## ASSIGNEMENT
 Travel time estimation: Students will use map APIs such as Google Maps or OpenStreetMap to gather
@@ -32,6 +30,20 @@ where each of the tags identifies a specific parameter for the __osm2pgsql__ fun
 - "--hstore" : to add additional tags without a column to an additional hstore column
 - "--latlong" : to store data in a latitude and longitude fomat, rather than using the EPSG:3857 format (which corresponds to the Web Mercator projection or WGS84 datum that is what GPSs use)
 
+#### Suggestion:
+To improve query loading times for some queries it might be useful to change a few __postgres__ configuration parameters:
+
+    SET max_parallel_workers = 16;
+    SET max_parallel_workers_per_gather = 8;
+    SET work_mem = '2000MB';
+
+and to add a few indexes to de database:
+
+    CREATE INDEX idx_osm_polygon_way ON planet_osm_polygon USING GIST(way); 
+    CREATE INDEX idx_osm_line_way ON planet_osm_line USING GIST(way);
+    CREATE INDEX idx_osm_line_osm_id ON planet_osm_line (osm_id);
+    CREATE INDEX idx_osm_polygon_building ON planet_osm_polygon (building);
+
 ### STEP 3
 It was then necessary to install a few python modules:
 
@@ -55,3 +67,4 @@ The application can be executed from a main class that handles all of the high l
 - https://wiki.openstreetmap.org/wiki/IT:Pagina%20Principale?uselang=it
 - https://download.geofabrik.de/europe/italy.html
 - https://osm2pgsql.org/
+

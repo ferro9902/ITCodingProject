@@ -15,10 +15,13 @@ class OsmLoader:
     def load_merged_from_latlong(self, lat: float, long: float):
         roads_on_startnode = self.load_roads_from_latlong(
             lat, long)
-        for r in self.load_lines_from_latlong(
-                lat, long):
+        roads_on_startnode_length = len(roads_on_startnode)
+        lines_on_startnode = self.load_lines_from_latlong(
+            lat, long)
+        for r in lines_on_startnode:
             if r not in roads_on_startnode:
                 roads_on_startnode.append(r)
+        print(f"merged {roads_on_startnode_length} roads and {len(lines_on_startnode)} lines into a list of {len(roads_on_startnode)} without duplicates")
         return roads_on_startnode
 
 # Load roads based on latitude and longitude (within a predefined list of 'highway' field values)
@@ -30,8 +33,8 @@ class OsmLoader:
             road = OsmRoadDTO.OsmRoadDTO()
             road.record_to_osmroad(record)
             road_list.append(road)
-        print("converted query result to road list of size: ",
-              len(road_list))
+        print(
+            f"found {len(road_list)} roads (with specific 'highway' type) crossing (lat, long) = [{lat}, {long}]")
         return road_list
 
 # load the 'max_road_num' roads closest to the given latitude and longitude
@@ -43,8 +46,8 @@ class OsmLoader:
             road = OsmRoadDTO.OsmRoadDTO()
             road.record_to_osmroad(record)
             road_list.append(road)
-        print("converted query result to road list of size: ",
-              len(road_list))
+        print(
+            f"found the {len(road_list)} roads closest to (lat, long) = [{lat}, {long}]")
         return road_list
 
 # count the number of roads intersecting the given coordinates
@@ -52,7 +55,7 @@ class OsmLoader:
         query = f"SELECT COUNT(*) AS roads_count FROM planet_osm_roads as por WHERE ST_Intersects(por.way, ST_Point({long}, {lat}, 4326)) AND por.highway IN ('living_street', 'motorway', 'motorway_link', 'primary', 'primary_link', 'residential', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'trunk', 'trunk_link');"
         res = self.dbc.query_db(query)[0][0]
         print(
-            f"found {res} roads crossing on given coordinates long [{long}] and lat [{lat}]")
+            f"there are {len(res)} roads crossing on  (lat, long) = [{lat}, {long}]")
         return res
 
 # Load lines based on latitude and longitude (within a predefined list of 'highway' field values)
@@ -64,8 +67,8 @@ class OsmLoader:
             line = OsmRoadDTO.OsmRoadDTO()
             line.record_to_osmroad(record)
             line_list.append(line)
-        print("converted query result to line list of size: ",
-              len(line_list))
+        print(
+            f"found {len(line_list)} lines (with specific 'highway' type) crossing (lat, long) = [{lat}, {long}]")
         return line_list
 
 # load the 'max_road_num' lines closest to the given latitude and longitude
@@ -77,8 +80,8 @@ class OsmLoader:
             line = OsmRoadDTO.OsmRoadDTO()
             line.record_to_osmroad(record)
             line_list.append(line)
-        print("converted query result to line list of size: ",
-              len(line_list))
+        print(
+            f"found the {len(line_list)} lines closest to (lat, long) = [{lat}, {long}]")
         return line_list
 
 # count the number of lines intersecting the given coordinates
@@ -86,7 +89,7 @@ class OsmLoader:
         query = f"SELECT COUNT(*) AS line_count FROM planet_osm_line as pol WHERE ST_Intersects(pol.way, ST_Point({long}, {lat}, 4326)) AND pol.highway IN ('living_street', 'motorway', 'motorway_link', 'primary', 'primary_link', 'residential', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'trunk', 'trunk_link');"
         res = self.dbc.query_db(query)[0][0]
         print(
-            f"found {res} lines crossing on given coordinates long [{long}] and lat [{lat}]")
+            f"found {res} lines crossing on given coordinates (lat, long) = [{lat}, {long}]")
         return res
 
 # load roads based on the given 'osm_id'
@@ -98,8 +101,8 @@ class OsmLoader:
             road = OsmRoadDTO.OsmRoadDTO()
             road.record_to_osmroad(record)
             road_list.append(road)
-        print("converted query result to road list of size: ",
-              len(road_list))
+        print(
+            f"found {len(road_list)} roads with id = {id}")
         return road_list
 
 # load lines based on the given 'osm_id'
@@ -111,8 +114,8 @@ class OsmLoader:
             line = OsmRoadDTO.OsmRoadDTO()
             line.record_to_osmroad(record)
             line_list.append(line)
-        print("converted query result to line list of size: ",
-              len(line_list))
+        print(
+            f"found {len(line_list)} lines with id = {id}")
         return line_list
 
 # load lines connected to the given road that have the same 'highway' type
@@ -124,8 +127,8 @@ class OsmLoader:
             line = OsmRoadDTO.OsmRoadDTO()
             line.record_to_osmroad(record)
             line_list.append(line)
-        print("converted query result to line list of size: ",
-              len(line_list))
+        print(
+            f"found {len(line_list)} lines connected (of the same type) to the supplied road with id = {id}")
         return line_list
 
 # Correct the given coordinates to the closest ones from one of the road available in the DB
@@ -140,11 +143,13 @@ class OsmLoader:
             if distance < min_distance:
                 min_distance = distance
                 closest_coord = coordinate
+        print(
+            f"corrected coordinate {coord} with (latitude, longitude) = [{closest_coord[1]},  {closest_coord[0]}]")
         return CoordinatesDTO.CoordinatesDTO(closest_coord[1], closest_coord[0])
 
-# count number of roads within a predefined threshold distance from the road
+# count number of buildings within a predefined threshold distance from the road (least efficient query of the whole app even after lots of optimizing)
     def count_houses_near_road(self, id: int, house_distance_threshold):
-        query = f"select count(*) FROM planet_osm_polygon AS pop JOIN planet_osm_line AS pol ON ST_DWithin(ST_SetSRID(pol.way, 4326), ST_SetSRID(pop.way, 4326), {house_distance_threshold}) WHERE pol.osm_id = {id} and pop.building is not null and lower(pop.building) <> 'no' "
+        query = f"SELECT count(*) FROM planet_osm_polygon AS pop WHERE ST_DWithin(ST_SetSRID(pop.way, 4326), ST_SetSRID(( SELECT pol.way FROM planet_osm_line AS pol WHERE pol.osm_id = {id} ), 4326), {house_distance_threshold}) AND pop.building IS NOT NULL AND LOWER(pop.building) != 'no'"
         res = self.dbc.query_db(query)[0][0]
         print(
             f"found [{res}] houses close to the given road with id [{id}]")
